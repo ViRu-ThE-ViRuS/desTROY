@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 from turtle import *
@@ -16,9 +17,9 @@ class Player(object):
         self.body = set()
 
     def move(self, action):
-        if np.argmax(action) == 0:
+        if action == 0:
             self.aim.rotate(90)
-        elif np.argmax(action) == 1:
+        elif action == 1:
             pass
         else:
             self.aim.rotate(-90)
@@ -26,8 +27,10 @@ class Player(object):
     def update(self):
         self.xy.move(self.aim)
         head = self.xy.copy()
-        self.body.add(head)
         return head
+
+    def post_update(self, head):
+        self.body.add(head)
 
     def check(self, other):
         return other in self.body
@@ -39,23 +42,52 @@ class TroyEnv(object):
     observation_space = (8,)
     action_space = 3
 
-    def __init__(self, dimen_x=200, dimen_y=200):
+    def __init__(self, dimen_x=200, dimen_y=200, manual=False):
         self.dimen_x = dimen_x
         self.dimen_y = dimen_y
+        self.manual = True
 
         self.reset()
 
     def reset(self):
         self.player1 = Player(p1xy_initial.copy(), p1aim_initial.copy())
         self.player2 = Player(p2xy_initial.copy(), p2aim_initial.copy())
-        self._first = True
 
         self.done = 0
         self.state = self.initial_state
         return self.state
 
+    def _default_step(self):
+        head1 = self.player1.update()
+        head2 = self.player2.update()
+
+        if not self.inside(head1) or self.player2.check(head1) or \
+                self.player1.check(head1):
+            reward = -100
+            self.done = True
+        elif not self.inside(head2) or self.player1.check(head2) or \
+                self.player2.check(head2):
+            reward = +100
+            self.done = True
+
+        self.player1.post_update(head1)
+        self.player2.post_update(head2)
+
+        if self.done:
+            self.state = (self.player1.xy.x, self.player1.xy.y,
+                          self.player1.aim.x, self.player1.aim.y,
+                          self.player2.xy.x, self.player2.xy.y,
+                          self.player2.aim.x, self.player2.aim.y)
+            return self.state, reward, self.done, None
+
+        return None
+
     def step(self, action1, action2):
         assert not self.done
+
+        returns = self._default_step()
+        if returns:
+            return returns
 
         self.player1.move(action1)
         self.player2.move(action2)
@@ -64,15 +96,17 @@ class TroyEnv(object):
         head2 = self.player2.update()
         reward = 0
 
-        if not self.inside(head1) or self.player2.check(head1):
+        if not self.inside(head1) or self.player2.check(head1) or \
+                self.player1.check(head1):
             reward = -100
             self.done = True
-        elif not self.inside(head2) or self.player1.check(head2):
+        elif not self.inside(head2) or self.player1.check(head2) or \
+                self.player2.check(head2):
             reward = +100
             self.done = True
 
-        if done and not self._first:
-            done()
+        self.player1.post_update(head1)
+        self.player2.post_update(head2)
 
         self.state = (self.player1.xy.x, self.player1.xy.y,
                       self.player1.aim.x, self.player1.aim.y,
@@ -81,17 +115,42 @@ class TroyEnv(object):
 
         return self.state, reward, self.done, None
 
-    def render(self):
-        if self._first:
-            self._first = False
-            setup(self.dimen_x*2+20, self.dimen_y*2+20, 370, 370)
-            hideturtle()
-            tracer(False)
+    def _draw(self):
+        head1 = self.player1.update()
+        head2 = self.player2.update()
+
+        if not self.inside(head1) or self.player2.check(head1) or \
+                self.player1.check(head1):
+            self.done = True
+        elif not self.inside(head2) or self.player1.check(head2) or \
+                self.player2.check(head2):
+            self.done = True
+
+        self.player1.post_update(head1)
+        self.player2.post_update(head2)
 
         square(self.player1.xy.x, self.player1.xy.y, 3, 'red')
         square(self.player2.xy.x, self.player2.xy.y, 3, 'blue')
+
         update()
 
+        if self.done:
+            done()
+        else:
+            ontimer(self._draw, 50)
+
+    def render(self):
+        assert self.manual
+
+        setup(420, 420, 370, 0)
+        hideturtle()
+        tracer(False)
+        listen()
+        onkey(lambda: self.player2.aim.rotate(90), 'j')
+        onkey(lambda: self.player2.aim.rotate(-90), 'l')
+        self._draw()
+        done()
+
     def inside(self, head):
-        return -self.dimen_x < head.x < self.dimen-x and \
+        return -self.dimen_x < head.x < self.dimen_x and \
             -self.dimen_y < head.y < self.dimen_y
