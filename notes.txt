@@ -1,0 +1,5 @@
+# beating tron
+### reinforcement learning agent, to beat me in TRON
+
+- need two sets of players trying to beat each other while learning
+- self play when models start improving
