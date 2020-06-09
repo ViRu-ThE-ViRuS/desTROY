@@ -11,6 +11,10 @@ if __name__ == '__main__':
     rewards, steps = [], []
     losses1, losses2 = [], []
 
+    rider1.load('v0', 9000)
+    rider2.load('v0', 9000)
+    single_player = True
+
     print('episode : loss_rider1_avg'
           # ' : loss_rider2_avg'
           ' : reward_rider1_avg'
@@ -19,18 +23,18 @@ if __name__ == '__main__':
         done = False
         total_reward = np.zeros(2)
         episode_steps = 0
-        (state1, state2) = env.reset()
+        (state1, state2) = env.reset(single_player=single_player)
 
         while not done:
             action1 = rider1.move(state1)
-            action2 = rider2.move(state2)
+            action2 = None if single_player else rider2.move(state2)
 
             (state1_, state2_), reward, done, _ = env.step(action1, action2,
-                                                           episode % 50 == 0)
+                                                           episode % 25 == 0)
 
-            if episode_steps > 20:
+            if episode_steps > 50:
                 reward += 50
-            elif episode_steps > 10:
+            elif episode_steps > 20:
                 reward += 20
 
             loss1 = rider1.learn(state1, state1_, reward[0], done)
@@ -52,6 +56,9 @@ if __name__ == '__main__':
               f' : {np.array(rewards)[:,1].mean():5f}'
               f' : {np.array(steps).mean():5f}')
 
-        if episode % 1000 == 0:
+        if episode % 1000 == 0 and episode != 0:
             rider1.save(episode)
-            rider2.load(rider1.actorcritic.model_name, episode)
+            if not single_player:
+                rider2.load(rider1.actorcritic.model_name, episode)
+
+            single_player = not single_player
