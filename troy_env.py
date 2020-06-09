@@ -1,7 +1,9 @@
 import pygame
+from PIL import Image
+import numpy as np
+from skimage import color
 
-
-# FPS = 1000
+FPS = 10
 white = pygame.Color(255, 255, 255)
 black = pygame.Color(0, 0, 0)
 red = pygame.Color(255, 0, 0)
@@ -21,6 +23,9 @@ pygame.display.set_caption('desTROY')
 
 
 class TroyEnv(object):
+    action_space = 2
+    observation_space = (1, 110, 110)
+
     def __init__(self):
         pygame.init()
         self.reset()
@@ -31,19 +36,22 @@ class TroyEnv(object):
 
     def reset(self):
         self.done = False
-        self.rider1 = Rider(black, [window_width/2-50, window_height/2-50], up)
+        self.rider1 = Rider(green, [window_width/2-50, window_height/2-50], up)
         self.rider2 = Rider(red, [window_width/2+50, window_height/2+50], down)
+
+        game_display.fill(white)
+        self.draw_border(black)
 
         return self.get_state()
 
-    def step(self, action1, action2):
+    def step(self, action1, action2, render=False):
         assert not self.done
 
-        self.done, reward = self.step_game(action1, action2)
+        self.done, reward = self.step_game(action1, action2, render)
         state = self.get_state()
         return state, reward, self.done, None
 
-    def step_game(self, action1, action2):
+    def step_game(self, action1, action2, render=False):
         done = False
         reward = [0, 0]
 
@@ -63,7 +71,10 @@ class TroyEnv(object):
 
         self.rider1.advance()
         self.rider2.advance()
-        game_display.fill(white)
+
+        if render:
+            game_display.fill(white)
+            self.draw_border(black)
 
         if self.rider1.check_self_collision():
             done = True
@@ -79,16 +90,47 @@ class TroyEnv(object):
             done = True
             reward[0] = 100
 
-        self.rider1.render()
-        self.rider2.render()
+        if render:
+            self.rider1.render()
+            self.rider2.render()
 
-        pygame.display.update()
-        # clock.tick(FPS)
+            pygame.display.update()
+            clock.tick(FPS)
 
-        return done, reward
+        return done, np.array(reward)
 
     def get_state(self):
-        return pygame.surfarray.array3d(game_display).swapaxes(0, 1)
+        dimen1 = [self.rider1.lead[0] - 50,
+                  self.rider1.lead[1] - 100 - block_size,
+                  self.rider1.lead[0] + 50 + block_size,
+                  self.rider1.lead[1]]
+
+        dimen2 = [self.rider2.lead[0] - 50,
+                  self.rider2.lead[1] - 100 - block_size,
+                  self.rider2.lead[0] + 50 + block_size,
+                  self.rider2.lead[1]]
+
+        image = np.array(pygame.surfarray.array3d(game_display).swapaxes(0, 1))
+        image = Image.fromarray(image).convert('1')
+        cropped_images = [image.crop(dimen1), image.crop(dimen2)]
+        np_images = list(map(self.image_to_np, cropped_images))
+        return list(map(TroyEnv.image_dimen_swap, np_images))
+
+    def draw_border(self, color):
+        pygame.draw.rect(game_display,
+                         color, [0, 0, window_width, block_size])
+        pygame.draw.rect(game_display,
+                         color, [0, 0, block_size, window_height])
+        pygame.draw.rect(game_display,
+                         color, [0, window_height-block_size, window_width, block_size])
+        pygame.draw.rect(game_display,
+                         color, [window_width-block_size, 0, block_size, window_height])
+
+    def image_to_np(self, image):
+        return np.array(image.getdata()).reshape(self.observation_space[::-1])
+
+    def image_dimen_swap(image):
+        return image.swapaxes(0, 2)
 
 
 class Rider:
@@ -174,14 +216,14 @@ class Rider:
         return False
 
 
-if __name__ == '__main__':
-    env = TroyEnv()
+# if __name__ == '__main__':
+    # env = TroyEnv()
 
-    for _ in range(10):
-        done = False
-        state = env.reset()
-        while not done:
-            state, reward, done, _ = env.step(0, 0)
-            print(state, reward, done, _)
+    # for _ in range(10):
+        # done = False
+        # state = env.reset()
+        # while not done:
+        # state, reward, done, _ = env.step(0, 0)
+        # print(state, reward, done, _)
 
-    env.close()
+    # env.close()
