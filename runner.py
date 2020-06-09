@@ -26,7 +26,12 @@ if __name__ == '__main__':
             action2 = rider2.move(state2)
 
             (state1_, state2_), reward, done, _ = env.step(action1, action2,
-                                                           episode % 15 == 0)
+                                                           episode % 50 == 0)
+
+            if episode_steps > 20:
+                reward += 50
+            elif episode_steps > 10:
+                reward += 20
 
             loss1 = rider1.learn(state1, state1_, reward[0], done)
             # loss2 = rider2.learn(state2, state2_, reward[1], done)

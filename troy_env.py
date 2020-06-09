@@ -3,13 +3,13 @@ from PIL import Image
 import numpy as np
 from skimage import color
 
-FPS = 10
+FPS = 100
 white = pygame.Color(255, 255, 255)
 black = pygame.Color(0, 0, 0)
 red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)
-window_height = 600
-window_width = 600
+window_height = 400
+window_width = 400
 
 up = (0, -1)
 down = (0, 1)
@@ -64,10 +64,10 @@ class TroyEnv(object):
 
         if self.rider1.out_of_bounds():
             done = True
-            reward[1] = 100
+            reward[0] = -100
         elif self.rider2.out_of_bounds():
             done = True
-            reward[0] = 100
+            reward[1] = -100
 
         self.rider1.advance()
         self.rider2.advance()
@@ -78,17 +78,17 @@ class TroyEnv(object):
 
         if self.rider1.check_self_collision():
             done = True
-            reward[1] = 100
+            reward[0] = -100
         elif self.rider2.check_self_collision():
             done = True
-            reward[0] = 100
+            reward[1] = -100
 
         if self.rider1.check_collision(self.rider2.components):
             done = True
-            reward[1] = 100
+            reward[0] = -100
         elif self.rider2.check_collision(self.rider1.components):
             done = True
-            reward[0] = 100
+            reward[1] = -100
 
         if render:
             self.rider1.render()
