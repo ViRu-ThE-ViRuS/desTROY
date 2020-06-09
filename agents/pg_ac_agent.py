@@ -6,10 +6,14 @@ import numpy as np
 
 
 class ActorCriticNetwork(nn.Module):
-    def __init__(self, input_shape, output_shape, filter_sizes):
+    def __init__(self, input_shape, output_shape, filter_sizes,
+                 model_name=None):
         super(ActorCriticNetwork, self).__init__()
         self.input_shape = input_shape
         self.output_shape = output_shape
+
+        self.model_name = model_name
+        self.model_path = 'model_saves/cnn_{}_{}.pt'
 
         self.cnn_layers = nn.Sequential(
             nn.Conv2d(1, filter_sizes[0],
@@ -58,15 +62,23 @@ class ActorCriticNetwork(nn.Module):
         v = self.v(x)
         return pi, v
 
+    def save(self, counter):
+        T.save(self.state_dict(), self.model_path.format(self.model_name,
+                                                         counter))
+
+    def load(self, name, counter):
+        self.load_state_dict(T.load(self.model_path.format(name,
+                                                           counter)))
+
 
 class Agent(object):
-    def __init__(self, input_shape, output_shape, gamma):
+    def __init__(self, input_shape, output_shape, gamma, name=None):
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.gamma = gamma
 
         self.actorcritic = ActorCriticNetwork(input_shape, output_shape,
-                                              [64, 128, 256])
+                                              [64, 128, 256], name)
         self.device = self.actorcritic.device
         self.log_probs = None
 
@@ -99,3 +111,9 @@ class Agent(object):
         self.actorcritic.optimizer.step()
 
         return loss.item()
+
+    def save(self, counter):
+        self.actorcritic.save(counter)
+
+    def load(self, name, counter):
+        self.actorcritic.load(name, counter)
