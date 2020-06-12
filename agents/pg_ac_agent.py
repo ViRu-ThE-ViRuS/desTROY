@@ -16,36 +16,32 @@ class ActorCriticNetwork(nn.Module):
         self.model_path = 'model_saves/cnn_{}_{}.pt'
 
         self.cnn_layers = nn.Sequential(
-            nn.Conv2d(1, filter_sizes[0],
-                      kernel_size=110, stride=1, padding=1),
+            nn.Conv2d(1, filter_sizes[0], kernel_size=110, stride=1, padding=1),
             nn.BatchNorm2d(filter_sizes[0]),
             nn.ReLU(inplace=True),
 
-            nn.Conv2d(filter_sizes[0], filter_sizes[1],
-                      kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(filter_sizes[0], filter_sizes[1], kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(filter_sizes[1]),
             nn.ReLU(inplace=True),
 
-            nn.Conv2d(filter_sizes[1], filter_sizes[2],
-                      kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(filter_sizes[1], filter_sizes[2], kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(filter_sizes[2]),
             nn.ReLU(inplace=True),
 
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
 
-        cnn_output_shape = np.prod(self.cnn_layers(T.tensor(np.zeros((1, *input_shape)),
-                                                            dtype=T.float)).shape[1:])
+        cnn_output_shape = np.prod(self.cnn_layers(T.tensor(np.zeros((1, *input_shape)), dtype=T.float)).shape[1:])
 
         self.linear_layers = nn.Sequential(
-            nn.Linear(cnn_output_shape, 256),
+            nn.Linear(cnn_output_shape, 128),
             nn.ReLU(inplace=True),
-            nn.Linear(256, 128),
+            nn.Linear(128, 64),
             nn.ReLU(inplace=True)
         )
 
-        self.pi = nn.Linear(128, output_shape)
-        self.v = nn.Linear(128, 1)
+        self.pi = nn.Linear(64, output_shape)
+        self.v = nn.Linear(64, 1)
 
         self.loss = nn.MSELoss()
         self.optimizer = T.optim.Adam(self.parameters())
@@ -77,28 +73,21 @@ class Agent(object):
         self.output_shape = output_shape
         self.gamma = gamma
 
-        self.actorcritic = ActorCriticNetwork(input_shape, output_shape,
-                                              [64, 128, 256], name)
+        self.actorcritic = ActorCriticNetwork(input_shape, output_shape, [64, 128, 256], name)
         self.device = self.actorcritic.device
-        self.steps = 0
-        self.threshold = 100
-        self.state_memory = []
-        self.state__memory = []
-        self.reward_memory = []
-        self.done_memory = []
-        self.actionprobs_memory = []
+
+        self.threshold = 25
+        self.reset_memory()
 
     def move(self, state):
         self.actorcritic.eval()
-        action, _ = self.actorcritic(
-            T.tensor([state], dtype=T.float).to(self.device))
 
+        action, _ = self.actorcritic(T.tensor([state], dtype=T.float).to(self.device))
         action_probs = F.softmax(action, dim=0)
         distribution = T.distributions.Categorical(action_probs)
         chosen_action = distribution.sample()
         log_probs = distribution.log_prob(chosen_action)
 
-        self.actorcritic.train()
         return chosen_action.item(), log_probs
 
     def learn(self, state, state_, reward, done, actionprobs):
@@ -111,7 +100,14 @@ class Agent(object):
             self.actionprobs_memory.append(actionprobs)
             return None, None
 
+        self.actorcritic.train()
         self.actorcritic.optimizer.zero_grad()
+        state = T.tensor(self.state_memory).to(self.device).float()
+        state_ = T.tensor(self.state__memory).to(self.device).float()
+        reward = T.tensor(self.reward_memory).to(self.device).float()
+        done = T.tensor(self.done_memory, dtype=T.int).to(self.device)
+        log_probs = T.tensor(self.actionprobs_memory).to(self.device).float()
+
         state = T.tensor(self.state_memory).to(self.device).float()
         state_ = T.tensor(self.state__memory).to(self.device).float()
         reward = T.tensor(self.reward_memory).to(self.device).float()
@@ -129,17 +125,16 @@ class Agent(object):
         loss.mean().backward()
         self.actorcritic.optimizer.step()
 
+        self.reset_memory()
+        return loss.mean().item(), reward.mean().item()
+
+    def reset_memory(self):
         self.steps = 0
         self.state_memory = []
         self.state__memory = []
         self.actionprobs_memory = []
         self.reward_memory = []
         self.done_memory = []
-
-        loss_mean, reward_mean = loss.mean().item(), reward.mean().item()
-
-        del state, state_, reward, done, log_probs, loss
-        return loss_mean, reward_mean
 
     def save(self, counter):
         self.actorcritic.save(counter)
