@@ -13,8 +13,8 @@ if __name__ == '__main__':
     losses1, losses2 = [], []
 
     try:
-        rider1.load('dqn0', 50000)
-        rider2.load('dqn0', 50000)
+        rider1.load('dqn0', 12500)
+        rider2.load('dqn0', 12500)
     except FileNotFoundError:
         pass
 
