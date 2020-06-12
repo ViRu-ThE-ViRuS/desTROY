@@ -35,12 +35,14 @@ class ReplayBuffer:
 
 
 class DuelingDDQN(nn.Module):
-    def __init__(self, input_shape, output_dim, filter_sizes):
+    def __init__(self, input_shape, output_dim, filter_sizes, name):
         super(DuelingDDQN, self).__init__()
         self.input_shape = input_shape
         self.output_dim = output_dim
 
         self.model_path = 'model_saves/1cnn_{}_{}.pt'
+        self.model_name = name if name else "default"
+
         self.cnn_layers = nn.Sequential(
             nn.Conv2d(1, filter_sizes[0], kernel_size=110, stride=1, padding=1),
             nn.BatchNorm2d(filter_sizes[0]),
@@ -107,11 +109,10 @@ class Agent:
         self.output_dim = output_dim
         self.epsilon = epsilon
         self.gamma = gamma
-        self.model_name = name
 
-        self.q_eval = DuelingDDQN(input_shape, output_dim, [32, 64, 128])
-        self.q_next = DuelingDDQN(input_shape, output_dim, [32, 64, 128])
-        self.memory = ReplayBuffer(10000, input_shape, output_dim)
+        self.q_eval = DuelingDDQN(input_shape, output_dim, [32, 64, 128], name)
+        self.q_next = DuelingDDQN(input_shape, output_dim, [32, 64, 128], name)
+        self.memory = ReplayBuffer(100000, input_shape, output_dim)
 
         self.threshold = 100
         self.learn_step = 0

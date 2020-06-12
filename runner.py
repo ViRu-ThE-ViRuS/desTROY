@@ -47,10 +47,10 @@ if __name__ == '__main__':
             episode_steps += 1
 
             if loss1:
-                print('trainstep with batch of data...', rider1.threshold)
+                # print('trainstep with batch of data...', rider1.threshold)
                 if episode > current_stage:
-                    rider1.threshold += 25
-                    current_stage += 1000
+                    rider1.threshold += 50
+                    current_stage += 500
 
                 rewards.append(reward)
                 losses1.append(loss1)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
               f' : {np.array(rewards).mean():5f}'
               f' : {np.array(steps).mean():5f}')
 
-        if episode % 1000 == 0 and episode != 0:
+        if episode % 500 == 0 and episode != 0:
             rider1.save(episode)
-            rider2.load(rider1.actorcritic.model_name, episode)
+            rider2.load(rider1.q_eval.model_name, episode)
             print('saving model...')
