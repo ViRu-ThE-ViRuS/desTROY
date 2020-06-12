@@ -4,6 +4,10 @@ gradients actor critic models, Deep Q Learning, Deep Deterministic Actor Critic,
 and Advanced Advantage Actor Critic, and technologies like Pytorch and Cython.
 
 ### results
+#### gen0
+starting training on A2C model
+![](res/training.gif)
+
 #### gen1
 after 3 hours of training, the model shows significant recognition of game
 boundaries and tries to avoid itself by going in circles, using the Advantage
@@ -19,8 +23,6 @@ episode is taking longer to run (due to bigger batches in the replay buffer)
 
 - trying to speed up learning by giving incentive rewards for survival and
   strategic cutting off of opponent
-
-![](res/training.gif)
 
 #### future work
 - cythonize the code
