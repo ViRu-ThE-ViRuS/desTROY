@@ -1,19 +1,20 @@
-from agents.pg_ac_agent import Agent
+from agents.pg_ac_agent import Agent as AgentPG
+from agents.dqn_agent import Agent as AgentDQN
 from troy_env import TroyEnv
 import numpy as np
 
 if __name__ == '__main__':
     env = TroyEnv()
-    rider1 = Agent(env.observation_space, env.action_space, 1.0, 'v1')
-    rider2 = Agent(env.observation_space, env.action_space, 1.0)
+    rider1 = AgentDQN(env.observation_space, env.action_space, 1.0, 'dqn0')
+    rider2 = AgentDQN(env.observation_space, env.action_space, 1.0)
 
     episodes = 50000
     rewards, steps = [], []
     losses1, losses2 = [], []
 
     try:
-        rider1.load('v1', 50000)
-        rider2.load('v1', 50000)
+        rider1.load('dqn0', 50000)
+        rider2.load('dqn0', 50000)
     except FileNotFoundError:
         pass
 
@@ -31,14 +32,14 @@ if __name__ == '__main__':
         (state1, state2) = env.reset()
 
         while not done:
-            action1, actionprobs1 = rider1.move(state1)
-            action2, actionprobs2 = rider2.move(state2)
+            action1 = rider1.move(state1)
+            action2 = rider2.move(state2)
 
             (state1_, state2_), reward, done, _ = env.step(action1, action2,
                                                            # episode % 10 == 0)
                                                            True)
 
-            loss1, reward = rider1.learn(state1, state1_, reward[0], done, actionprobs1)
+            loss1, reward = rider1.learn(state1, action1, state1_, reward[0], done)
             # loss2 = rider2.learn(state2, state2_, reward[1], done, actionprobs2)
 
             state1 = state1_
