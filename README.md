@@ -28,3 +28,6 @@ episode is taking longer to run (due to bigger batches in the replay buffer)
 - explore evolutionary strategy in this particular game (integrate my Evolve
   project with desTROY)
 
+#### updates
+- added batching in train steps
+- added missing `.eval()` when using model to choose an action

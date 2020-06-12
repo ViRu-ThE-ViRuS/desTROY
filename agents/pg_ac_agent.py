@@ -102,6 +102,11 @@ class Agent(object):
 
         self.actorcritic.train()
         self.actorcritic.optimizer.zero_grad()
+        state = T.tensor(self.state_memory).to(self.device).float()
+        state_ = T.tensor(self.state__memory).to(self.device).float()
+        reward = T.tensor(self.reward_memory).to(self.device).float()
+        done = T.tensor(self.done_memory, dtype=T.int).to(self.device)
+        log_probs = T.tensor(self.actionprobs_memory).to(self.device).float()
 
         state = T.tensor(self.state_memory).to(self.device).float()
         state_ = T.tensor(self.state__memory).to(self.device).float()
