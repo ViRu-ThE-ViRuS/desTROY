@@ -91,19 +91,7 @@ class TroyEnv(object):
         return done, np.array(reward)
 
     def get_state(self):
-        dimen1 = [
-            self.rider1.lead[0] - 50,
-            self.rider1.lead[1] - 100,
-            self.rider1.lead[0] + 50 + block_size,
-            self.rider1.lead[1] + block_size
-        ]
-
-        dimen2 = [
-            self.rider2.lead[0] - 50,
-            self.rider2.lead[1] - 100,
-            self.rider2.lead[0] + 50 + block_size,
-            self.rider2.lead[1] + block_size
-        ]
+        dimen1, dimen2 = self.get_agent_vision_dimens()
 
         image = np.array(pygame.surfarray.array3d(game_display).swapaxes(0, 1))
         image = Image.fromarray(image)
@@ -111,6 +99,7 @@ class TroyEnv(object):
 
         # left, upper, right, lower
         cropped_images = [image.crop(dimen1), image.crop(dimen2)]
+
         np_images = list(map(self.image_to_np, cropped_images))
         return list(map(TroyEnv.image_dimen_swap, np_images))
 
@@ -129,6 +118,25 @@ class TroyEnv(object):
         if image is not None:
             return image.swapaxes(0, 2)
         return None
+
+    def get_agent_vision_dimens(self):
+        # TODO: localize
+
+        dimen1 = [
+            self.rider1.lead[0] - 50,
+            self.rider1.lead[1] - 50,
+            self.rider1.lead[0] + 50 + block_size,
+            self.rider1.lead[1] + 50 + block_size
+        ]
+
+        dimen2 = [
+            self.rider2.lead[0] - 50,
+            self.rider2.lead[1] - 50,
+            self.rider2.lead[0] + 50 + block_size,
+            self.rider2.lead[1] + 50 + block_size
+        ]
+
+        return dimen1, dimen2
 
 
 class Rider:

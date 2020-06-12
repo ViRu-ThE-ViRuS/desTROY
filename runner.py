@@ -49,7 +49,7 @@ if __name__ == '__main__':
                 print('trainstep with batch of data...', rider1.threshold)
                 if episode > current_stage:
                     rider1.threshold += 25
-                    current_stage += 500
+                    current_stage += 1000
 
                 rewards.append(reward)
                 losses1.append(loss1)

@@ -76,7 +76,7 @@ class Agent(object):
         self.actorcritic = ActorCriticNetwork(input_shape, output_shape, [64, 128, 256], name)
         self.device = self.actorcritic.device
 
-        self.threshold = 50
+        self.threshold = 25
         self.reset_memory()
 
     def move(self, state):
