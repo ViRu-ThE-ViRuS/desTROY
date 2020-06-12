@@ -100,7 +100,7 @@ class TroyEnv(object):
 
         if render:
             pygame.display.update()
-            clock.tick(FPS)
+            # clock.tick(FPS)
 
         return done, np.array(reward)
 
@@ -204,8 +204,8 @@ class Rider:
                 self.direction = down
 
     def out_of_bounds(self):
-        if self.lead[0] >= window_width-block_size or self.lead[0] < block_size or \
-                self.lead[1] >= window_height-block_size or self.lead[1] < block_size:
+        if self.lead[0] >= window_width-2*block_size or self.lead[0] <= 2*block_size or \
+                self.lead[1] >= window_height-2*block_size or self.lead[1] <= 2*block_size:
             return True
 
         return False
