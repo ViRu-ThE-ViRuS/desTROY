@@ -18,3 +18,6 @@ boundaries and tries to avoid itself by going in circles
 - explore evolutionary strategy in this particular game (integrate my Evolve
   project with desTROY)
 
+#### updates
+- added batching in train steps
+- added missing `.eval()` when using model to choose an action

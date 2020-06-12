@@ -1,5 +1,5 @@
 import pygame
-from PIL import Image
+from PIL import Image, ImageOps
 import numpy as np
 
 FPS = 100
@@ -33,17 +33,17 @@ class TroyEnv(object):
         pygame.quit()
         quit()
 
-    def reset(self, single_player=False):
+    def reset(self):
         self.done = False
-        self.single_player = single_player
         self.rider1 = Rider(green, [window_width/2-50, window_height/2-50], up)
-        if not self.single_player:
-            self.rider2 = Rider(
-                red, [window_width/2+50, window_height/2+50], down)
+        self.rider2 = Rider(red, [window_width/2+50, window_height/2+50], down)
 
         game_display.fill(white)
         self.draw_border(black)
-
+        self.rider1.advance()
+        self.rider2.advance()
+        self.rider1.render()
+        self.rider2.render()
         return self.get_state()
 
     def step(self, action1, action2, render=False):
@@ -62,76 +62,63 @@ class TroyEnv(object):
                 done = True
 
         self.rider1.move(action1)
-        if not self.single_player:
-            self.rider2.move(action2)
+        self.rider2.move(action2)
+        self.rider1.advance()
+        self.rider2.advance()
 
-        if self.rider1.out_of_bounds():
+        if self.rider1.out_of_bounds() or \
+                self.rider1.check_self_collision() or \
+                self.rider1.check_collision(self.rider2.components):
             done = True
             reward[0] = -100
-        if not self.single_player and self.rider2.out_of_bounds():
+
+        if self.rider2.out_of_bounds() or \
+                self.rider2.check_self_collision() or \
+                self.rider2.check_collision(self.rider1.components):
             done = True
             reward[1] = -100
-
-        self.rider1.advance()
-        if not self.single_player:
-            self.rider2.advance()
 
         game_display.fill(white)
         self.draw_border(black)
 
-        if self.rider1.check_self_collision():
-            done = True
-            reward[0] = -100
-
-        if not self.single_player and self.rider2.check_self_collision():
-            done = True
-            reward[1] = -100
-
-        if self.rider1.check_collision(self.rider2.components):
-            done = True
-            reward[0] = -100
-        if not self.single_player and self.rider2.check_collision(self.rider1.components):
-            done = True
-            reward[1] = -100
-
         self.rider1.render()
-        if not self.single_player:
-            self.rider2.render()
+        self.rider2.render()
 
         if render:
             pygame.display.update()
-            clock.tick(FPS)
+            # clock.tick(FPS)
 
         return done, np.array(reward)
 
     def get_state(self):
-        dimen1 = [self.rider1.lead[0] - 50,
-                  self.rider1.lead[1] - 100,
-                  self.rider1.lead[0] + 50 + block_size,
-                  self.rider1.lead[1] + block_size]
+        dimen1 = [
+            self.rider1.lead[0] - 50,
+            self.rider1.lead[1] - 100,
+            self.rider1.lead[0] + 50 + block_size,
+            self.rider1.lead[1] + block_size
+        ]
 
-        if not self.single_player:
-            dimen2 = [self.rider2.lead[0] - 50,
-                      self.rider2.lead[1] - 100,
-                      self.rider2.lead[0] + 50 + block_size,
-                      self.rider2.lead[1] + block_size]
+        dimen2 = [
+            self.rider2.lead[0] - 50,
+            self.rider2.lead[1] - 100,
+            self.rider2.lead[0] + 50 + block_size,
+            self.rider2.lead[1] + block_size
+        ]
 
         image = np.array(pygame.surfarray.array3d(game_display).swapaxes(0, 1))
-        image = Image.fromarray(image).convert('L')
-        cropped_images = [image.crop(dimen1), image.crop(dimen2) if
-                          not self.single_player else None]
+        image = Image.fromarray(image)
+        image = ImageOps.grayscale(image)
+
+        # left, upper, right, lower
+        cropped_images = [image.crop(dimen1), image.crop(dimen2)]
         np_images = list(map(self.image_to_np, cropped_images))
         return list(map(TroyEnv.image_dimen_swap, np_images))
 
     def draw_border(self, color):
-        pygame.draw.rect(game_display,
-                         color, [0, 0, window_width, block_size])
-        pygame.draw.rect(game_display,
-                         color, [0, 0, block_size, window_height])
-        pygame.draw.rect(game_display,
-                         color, [0, window_height-block_size, window_width, block_size])
-        pygame.draw.rect(game_display,
-                         color, [window_width-block_size, 0, block_size, window_height])
+        pygame.draw.rect(game_display, color, [0, 0, window_width, block_size])
+        pygame.draw.rect(game_display, color, [0, 0, block_size, window_height])
+        pygame.draw.rect(game_display, color, [0, window_height-block_size, window_width, block_size])
+        pygame.draw.rect(game_display, color, [window_width-block_size, 0, block_size, window_height])
 
     def image_to_np(self, image):
         if image is not None:
@@ -204,11 +191,8 @@ class Rider:
                 self.direction = down
 
     def out_of_bounds(self):
-        if self.lead[0] >= window_width-block_size or self.lead[0] < block_size or \
-                self.lead[1] >= window_height-block_size or self.lead[1] < block_size:
-            return True
-
-        return False
+        return self.lead[0] >= window_width-2*block_size or self.lead[0] <= block_size or \
+            self.lead[1] >= window_height-2*block_size or self.lead[1] <= block_size
 
     def advance(self):
         self.lead[0] += self.direction[0] * block_size
