@@ -76,9 +76,6 @@ class Agent(object):
         self.actorcritic = ActorCriticNetwork(input_shape, output_shape, [64, 128, 256], name)
         self.device = self.actorcritic.device
 
-        self.threshold = 25
-        self.reset_memory()
-
     def move(self, state):
         self.actorcritic.eval()
 
@@ -90,51 +87,27 @@ class Agent(object):
 
         return chosen_action.item(), log_probs
 
-    def learn(self, state, state_, reward, done, actionprobs):
-        if self.steps < self.threshold:
-            self.steps += 1
-            self.state_memory.append(state)
-            self.state__memory.append(state_)
-            self.reward_memory.append(reward)
-            self.done_memory.append(done)
-            self.actionprobs_memory.append(actionprobs)
-            return None, None
-
+    def learn(self, state, action, state_, reward, done, actionprobs):
         self.actorcritic.train()
         self.actorcritic.optimizer.zero_grad()
-        state = T.tensor(self.state_memory).to(self.device).float()
-        state_ = T.tensor(self.state__memory).to(self.device).float()
-        reward = T.tensor(self.reward_memory).to(self.device).float()
-        done = T.tensor(self.done_memory, dtype=T.int).to(self.device)
-        log_probs = T.tensor(self.actionprobs_memory).to(self.device).float()
 
-        state = T.tensor(self.state_memory).to(self.device).float()
-        state_ = T.tensor(self.state__memory).to(self.device).float()
-        reward = T.tensor(self.reward_memory).to(self.device).float()
-        done = T.tensor(self.done_memory, dtype=T.int).to(self.device)
-        log_probs = T.tensor(self.actionprobs_memory).to(self.device).float()
+        state = T.tensor([state]).to(self.device).float()
+        state_ = T.tensor([state_]).to(self.device).float()
+        reward = T.tensor([reward]).to(self.device).float()
+        done = T.tensor([done], dtype=T.int).to(self.device)
 
         _, critic_ = self.actorcritic(state_)
         _, critic = self.actorcritic(state)
 
         delta = reward + self.gamma * critic_ * (1 - done) - critic
-        actor_loss = -log_probs * delta
+        actor_loss = -actionprobs * delta
         critic_loss = delta**2
 
         loss = (actor_loss + critic_loss)
-        loss.mean().backward()
+        loss.backward()
         self.actorcritic.optimizer.step()
 
-        self.reset_memory()
-        return loss.mean().item(), reward.mean().item()
-
-    def reset_memory(self):
-        self.steps = 0
-        self.state_memory = []
-        self.state__memory = []
-        self.actionprobs_memory = []
-        self.reward_memory = []
-        self.done_memory = []
+        return loss.item(), reward.item()
 
     def save(self, counter):
         self.actorcritic.save(counter)

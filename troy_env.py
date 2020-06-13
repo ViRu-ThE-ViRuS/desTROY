@@ -34,8 +34,11 @@ class TroyEnv(object):
         quit()
 
     def reset(self):
+        random_x = np.random.randint(window_height/2-50, window_height/2+50)
+        random_y = np.random.randint(window_width/2-50, window_width/2+50)
+
         self.done = False
-        self.rider1 = Rider(green, [window_width/2-50, window_height/2-50], up)
+        self.rider1 = Rider(green, [random_x, random_y], up)
         self.rider2 = Rider(red, [window_width/2+50, window_height/2+50], down)
 
         game_display.fill(white)
