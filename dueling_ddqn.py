@@ -1,4 +1,3 @@
-from agents.pg_ac_agent import Agent as AgentPG
 from agents.dqn_agent import Agent as AgentDQN
 from troy_env import TroyEnv
 import numpy as np
