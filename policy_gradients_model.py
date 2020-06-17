@@ -4,23 +4,20 @@ import numpy as np
 
 if __name__ == '__main__':
     env = TroyEnv()
-    rider1 = AgentPG(env.observation_space, env.action_space, 1.0, 'pg0')
-    rider2 = AgentPG(env.observation_space, env.action_space, 1.0)
+    rider = AgentPG(env.observation_space, env.action_space, 1.0, 'pg0')
 
     episodes = 50000
     rewards, steps = [], []
-    losses1, losses2 = [], []
+    losses = []
 
     try:
-        rider1.load('pg0', 500)
-        rider2.load('pg0', 500)
+        rider.load('pg0', 500)
     except FileNotFoundError:
         pass
 
     current_stage = 2500
 
     print('episode : loss_rider1_avg'
-          # ' : loss_rider2_avg'
           ' : reward_rider1_avg'
           ' : game_steps_avg')
 
@@ -28,38 +25,34 @@ if __name__ == '__main__':
         done = False
         total_reward = np.zeros(2)
         episode_steps = 0
-        (state1, state2) = env.reset()
+        state = env.reset()[0]
 
         while not done:
-            action1, actionprobs1 = rider1.move(state1)
-            action2, _ = rider2.move(state2)
+            action, actionprobs = rider.move(state)
 
-            (state1_, state2_), reward, done, _ = env.step(action1, action2,
-                                                           # episode % 10 == 0)
-                                                           True)
+            state_, reward, done, _ = env.step(action,
+                                               # episode % 10 == 0)
+                                               True)
 
-            loss1, reward = rider1.learn(state1, action1, state1_, reward[0], done, actionprobs1)
-            # loss2 = rider2.learn(state2, state2_, reward[1], done, actionprobs2)
+            state_ = state_[0]
+            loss, reward = rider.learn(state, action, state_, reward[0], done, actionprobs)
 
-            state1 = state1_
-            state2 = state2_
+            state = state_
             episode_steps += 1
 
             rewards.append(reward)
 
         steps.append(episode_steps)
-        losses1.append(loss1)
+        losses.append(loss)
 
-        print(f'{episode:5d} : {np.mean(losses1):5.2f}'
-              # f' : {np.mean(losses2):5.2f}'
+        print(f'{episode:5d} : {np.mean(losses):5.2f}'
               f' : {np.array(rewards).mean():5f}'
               f' : {np.array(steps).mean():5f}')
 
         if episode % 500 == 0 and episode != 0:
-            rider1.save(episode)
-            rider2.load(rider1.actorcritic.model_name, episode)
+            rider.save(episode)
             print('saving model...')
 
             rewards = []
             steps = []
-            losses1 = []
+            losses = []
