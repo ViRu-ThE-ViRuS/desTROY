@@ -23,6 +23,10 @@ episode is taking longer to run (due to bigger batches in the replay buffer)
 
 - trying to speed up learning by giving incentive rewards for survival and
   strategic cutting off of opponent
+- this gif is from training phase where i removed the opponent, to see if model
+  converges faster... since im using self play, both players show this learned
+  knowledge when in dueling mode
+<br><img src='res/traniing_2.gif' width="250" height="250" /><br>
 
 #### future work
 - add more algorithms
