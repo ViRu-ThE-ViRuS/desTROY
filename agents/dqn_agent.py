@@ -121,6 +121,7 @@ class Agent:
         if np.random.random() < self.epsilon:
             return np.random.choice(self.output_dim)
         else:
+            self.q_eval.eval()
             state = T.tensor([state]).float().to(self.q_eval.device)
             action, _ = self.q_eval(state)
             return action.max(axis=1)[1].item()
@@ -146,6 +147,7 @@ class Agent:
             self.memory.store(reward, done, action, state, state_)
             return None, None
 
+        self.q_eval.train()
         self.memory.store(reward, done, action, state, state_)
         self.learn_step += 1
         actions, states, states_, rewards, terminals = self.sample()
