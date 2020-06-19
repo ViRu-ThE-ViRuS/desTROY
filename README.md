@@ -23,6 +23,7 @@ episode is taking longer to run (due to bigger batches in the replay buffer)
 
 - trying to speed up learning by giving incentive rewards for survival and
   strategic cutting off of opponent
+<br><img src='res/traniing_2.gif' width="250" height="250" /><br>
 
 #### future work
 - add more algorithms
