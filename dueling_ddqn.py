@@ -11,7 +11,7 @@ if __name__ == '__main__':
     losses = []
 
     try:
-        rider.load('dqn0', 12500)
+        rider.load('dqn0', -1)
     except FileNotFoundError:
         pass
 
