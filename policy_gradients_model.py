@@ -11,9 +11,9 @@ if __name__ == '__main__':
     losses = []
 
     try:
-        rider.load('pg0', 500)
+        rider.load('pg0', -1)
     except FileNotFoundError:
-        pass
+        print('no save loaded...')
 
     current_stage = 2500
 

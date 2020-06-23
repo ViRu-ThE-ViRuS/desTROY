@@ -100,7 +100,7 @@ class DuelingDDQN(nn.Module):
 
     def load(self, name, counter):
         self.load_state_dict(T.load(self.model_path.format(name,
-                                                           counter)))
+                                                           counter)), strict=False)
 
 
 class Agent:
@@ -128,7 +128,7 @@ class Agent:
 
     def _update(self):
         if self.learn_step % 100 == 0:
-            self.q_next.load_state_dict(self.q_eval.state_dict())
+            self.q_next.load_state_dict(self.q_eval.state_dict(), strict=False)
 
     def sample(self):
         rewards, terminals, actions, states, states_ = \

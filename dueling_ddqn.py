@@ -13,7 +13,7 @@ if __name__ == '__main__':
     try:
         rider.load('dqn0', -1)
     except FileNotFoundError:
-        pass
+        print('no save loaded...')
 
     current_stage = 2500
 
