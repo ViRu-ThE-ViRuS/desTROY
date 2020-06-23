@@ -64,7 +64,7 @@ class ActorCriticNetwork(nn.Module):
 
     def load(self, name, counter):
         self.load_state_dict(T.load(self.model_path.format(name,
-                                                           counter)))
+                                                           counter)), strict=False)
 
 
 class Agent(object):

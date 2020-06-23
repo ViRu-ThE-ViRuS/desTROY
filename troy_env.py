@@ -38,25 +38,22 @@ class TroyEnv(object):
         random_y = np.random.randint(window_width/2-50, window_width/2+50)
 
         self.done = False
-        self.rider1 = Rider(green, [random_x, random_y], up)
-        self.rider2 = Rider(red, [window_width/2+50, window_height/2+50], down)
+        self.rider = Rider(green, [random_x, random_y], up)
 
         game_display.fill(white)
         self.draw_border(black)
-        self.rider1.advance()
-        self.rider2.advance()
-        self.rider1.render()
-        self.rider2.render()
+        self.rider.advance()
+        self.rider.render()
         return self.get_state()
 
-    def step(self, action1, action2, render=False):
+    def step(self, action, render=False):
         assert not self.done
 
-        self.done, reward = self.step_game(action1, action2, render)
+        self.done, reward = self.step_game(action, render)
         state = self.get_state()
         return state, reward, self.done, None
 
-    def step_game(self, action1, action2, render):
+    def step_game(self, action, render):
         done = False
         reward = [0, 0]
 
@@ -64,28 +61,18 @@ class TroyEnv(object):
             if event.type == pygame.QUIT:
                 done = True
 
-        self.rider1.move(action1)
-        self.rider2.move(action2)
-        self.rider1.advance()
-        self.rider2.advance()
+        self.rider.move(action)
+        self.rider.advance()
 
-        if self.rider1.out_of_bounds() or \
-                self.rider1.check_self_collision() or \
-                self.rider1.check_collision(self.rider2.components):
+        if self.rider.out_of_bounds() or \
+                self.rider.check_self_collision():
             done = True
             reward[0] = -100
-
-        if self.rider2.out_of_bounds() or \
-                self.rider2.check_self_collision() or \
-                self.rider2.check_collision(self.rider1.components):
-            done = True
-            reward[1] = -100
 
         game_display.fill(white)
         self.draw_border(black)
 
-        self.rider1.render()
-        self.rider2.render()
+        self.rider.render()
 
         if render:
             pygame.display.update()
@@ -94,14 +81,15 @@ class TroyEnv(object):
         return done, np.array(reward)
 
     def get_state(self):
-        dimen1, dimen2 = self.get_agent_vision_dimens()
+        dimen1 = self.get_agent_vision_dimens()
 
         image = np.array(pygame.surfarray.array3d(game_display).swapaxes(0, 1))
         image = Image.fromarray(image)
         image = ImageOps.grayscale(image)
 
         # left, upper, right, lower
-        cropped_images = [image.crop(dimen1), image.crop(dimen2)]
+        # cropped_images = [image.crop(dimen1), image.crop(dimen2)]
+        cropped_images = [image.crop(dimen1)]
 
         np_images = list(map(self.image_to_np, cropped_images))
         return list(map(TroyEnv.image_dimen_swap, np_images))
@@ -126,20 +114,13 @@ class TroyEnv(object):
         # TODO: localize
 
         dimen1 = [
-            self.rider1.lead[0] - 50,
-            self.rider1.lead[1] - 50,
-            self.rider1.lead[0] + 50 + block_size,
-            self.rider1.lead[1] + 50 + block_size
+            self.rider.lead[0] - 50,
+            self.rider.lead[1] - 50,
+            self.rider.lead[0] + 50 + block_size,
+            self.rider.lead[1] + 50 + block_size
         ]
 
-        dimen2 = [
-            self.rider2.lead[0] - 50,
-            self.rider2.lead[1] - 50,
-            self.rider2.lead[0] + 50 + block_size,
-            self.rider2.lead[1] + 50 + block_size
-        ]
-
-        return dimen1, dimen2
+        return dimen1
 
 
 class Rider:
