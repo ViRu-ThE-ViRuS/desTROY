@@ -10,8 +10,7 @@ starting training on Actor Critic model
 
 #### gen1
 after 3 hours of training, the model shows significant recognition of game
-boundaries and tries to avoid itself by going in circles, using the *advantage
-actor critic* model
+boundaries and tries to avoid itself by going in circles, using the *actor critic* model
 
 - the leads are promising, but frankly, the training time for this algorithm is
   too slow for me, so i will be coming back to this problem to explore A3C,
