@@ -5,7 +5,7 @@ and Advanced Advantage Actor Critic, and technologies like Pytorch and Cython.
 
 ### results
 #### gen0
-starting training on A2C model
+starting training on Actor Critic model
 <br><img src='res/training.gif' width="250" height="250" /><br>
 
 #### gen1
