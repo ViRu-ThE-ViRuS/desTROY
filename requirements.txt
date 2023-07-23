@@ -2,7 +2,7 @@ cycler==0.10.0
 Cython==0.29.19
 decorator==4.4.2
 freegames==2.3.2
-future==0.18.2
+future==0.18.3
 imageio==2.8.0
 joblib==0.15.1
 kiwisolver==1.2.0
